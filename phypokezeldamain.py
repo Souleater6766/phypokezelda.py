@@ -1,5 +1,6 @@
 import pygame
 import random
+import sys
 
 # Define constants
 WINDOW_WIDTH = 640
@@ -102,26 +103,37 @@ def move_player(dx, dy):
 
 # Check for collisions between the player and enemies
 def check_collisions():
-    global score, evolutions, legendary_items, player_rect,
-def check_collisions():
-global score, evolutions, legendary_items, player_rect, enemies, enemy_rects
-for enemy_rect in enemy_rects:
-    if player_rect.colliderect(enemy_rect):
-        # Remove the enemy from the list of enemies
-        index = enemy_rects.index(enemy_rect)
-        del enemies[index]
-        del enemy_rects[index]
+    global score, evolutions, legendary_items, player_rect, enemies, enemy_rects
 
-        # Update the score and check for evolutions and legendary items
-        score += 1
-        if score >= TARGET_SCORE:
-            print("You win!")
-            pygame.quit()
-        else:
-            pokemon_name = random.choice(list(evolutions.keys()))
+    # iterate over a copy so removing items inside the loop is safe
+    for enemy_rect in enemy_rects[:]:
+        if player_rect.colliderect(enemy_rect):
+            # Remove the enemy from the list of enemies
+            index = enemy_rects.index(enemy_rect)
+            enemies.pop(index)
+            enemy_rects.pop(index)
+
+            # Update the score and check for evolutions and legendary items
+            score += 1
+            if score >= TARGET_SCORE:
+                print("You win!")
+                pygame.quit()
+                sys.exit()
+
+            # pick from both evolutions and legendary items
+            choices = list(evolutions.keys()) + list(legendary_items.keys())
+            if not choices:
+                print("No more events.")
+                return
+
+            pokemon_name = random.choice(choices)
             if pokemon_name in evolutions:
                 print("Your", pokemon_name, "evolves into", evolutions[pokemon_name])
                 del evolutions[pokemon_name]
-            elif pokemon_name in legendary_items:
+            else:
+                # pokemon_name must be a legendary item name
                 print("You found a", pokemon_name, "! You can now catch", legendary_items[pokemon_name])
                 del legendary_items[pokemon_name]
+
+            # stop after handling one collision this frame
+            break
